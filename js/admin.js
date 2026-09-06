@@ -1,6 +1,6 @@
 import {
   db, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, getDocs, addDoc, serverTimestamp
+  collection, getDocs, addDoc, serverTimestamp, query, where
 } from "./common.js";
 import {
   loginAdmin, isAdmin, logoutAdmin, showToast, escapeHtml, DEFAULT_THRESHOLDS
@@ -61,15 +61,18 @@ function showPanel() {
   loadLevels();
   loadTests();
   loadScoring();
+  loadHomework();
+  loadPaymentRows();
 }
 
 /* ---------------- Tabs ---------------- */
+const TAB_NAMES = ["students", "levels", "tests", "homework", "attendance", "payment", "scoring"];
 function initTabs() {
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
-      ["students", "levels", "tests", "scoring"].forEach(name => {
+      TAB_NAMES.forEach(name => {
         document.getElementById("tab-" + name).style.display = (name === tab.dataset.tab) ? "" : "none";
       });
     });
@@ -143,8 +146,11 @@ async function loadLevels() {
     });
   });
 
-  const sel = document.getElementById("tLevel");
-  sel.innerHTML = levelsCache.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join("");
+  const optsHtml = levelsCache.map(l => `<option value="${l.id}">${escapeHtml(l.name)}</option>`).join("");
+  ["tLevel", "hLevel", "aLevel"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = optsHtml;
+  });
 }
 
 document.getElementById("levelForm").addEventListener("submit", async (e) => {
@@ -248,3 +254,156 @@ document.getElementById("saveScoringBtn").addEventListener("click", async () => 
   await setDoc(doc(db, "settings", "scoring"), { thresholds });
   showToast("Ball qoidasi saqlandi");
 });
+
+/* ---------------- Homework ---------------- */
+async function loadHomework() {
+  const snap = await getDocs(collection(db, "homework"));
+  const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  const tbody = document.querySelector("#homeworkTable tbody");
+  tbody.innerHTML = rows.length ? rows.map(h => `
+    <tr>
+      <td>${escapeHtml(h.title)}</td>
+      <td>${escapeHtml(h.level)}</td>
+      <td>${escapeHtml(h.dueDate || "—")}</td>
+      <td><button class="btn ghost small" data-del-hw="${h.id}">O'chirish</button></td>
+    </tr>`).join("") : `<tr><td colspan="4" class="empty">Uy vazifasi yo'q</td></tr>`;
+
+  tbody.querySelectorAll("[data-del-hw]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Vazifani o'chirishni tasdiqlaysizmi?")) return;
+      await deleteDoc(doc(db, "homework", btn.dataset.delHw));
+      showToast("Vazifa o'chirildi");
+      loadHomework();
+    });
+  });
+}
+
+document.getElementById("homeworkForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const title = document.getElementById("hTitle").value.trim();
+  const level = document.getElementById("hLevel").value;
+  const description = document.getElementById("hDesc").value.trim();
+  const dueDate = document.getElementById("hDue").value;
+  if (!title || !level) { showToast("Avval bo'lim qo'shing"); return; }
+
+  await addDoc(collection(db, "homework"), {
+    title, level, description, dueDate, createdAt: serverTimestamp()
+  });
+  showToast("Uy vazifasi qo'shildi");
+  e.target.reset();
+  loadHomework();
+});
+
+/* ---------------- Attendance ---------------- */
+let attendanceStudents = []; // [{id, name, status}]
+
+document.getElementById("loadAttendanceBtn").addEventListener("click", async () => {
+  const date = document.getElementById("aDate").value;
+  const level = document.getElementById("aLevel").value;
+  if (!date) { showToast("Sanani tanlang"); return; }
+  if (!level) { showToast("Avval bo'lim qo'shing"); return; }
+
+  const q = query(collection(db, "students"), where("level", "==", level));
+  const snap = await getDocs(q);
+  const students = snap.docs.map(d => ({ id: d.id, name: d.data().name || d.id }));
+
+  attendanceStudents = [];
+  for (const s of students) {
+    const existing = await getDoc(doc(db, "students", s.id, "attendance", date));
+    attendanceStudents.push({
+      id: s.id, name: s.name,
+      status: existing.exists() ? existing.data().status : "keldi"
+    });
+  }
+  renderAttendanceRows();
+  document.getElementById("attendanceSaveWrap").style.display = attendanceStudents.length ? "" : "none";
+});
+
+function renderAttendanceRows() {
+  const wrap = document.getElementById("attendanceRows");
+  if (!attendanceStudents.length) {
+    wrap.innerHTML = `<div class="empty">Bu bo'limda o'quvchi topilmadi</div>`;
+    return;
+  }
+  wrap.innerHTML = attendanceStudents.map(s => `
+    <div class="test-row" data-student="${s.id}">
+      <div style="font-weight:700;">${escapeHtml(s.name)}</div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn small att-came ${s.status === 'keldi' ? '' : 'ghost'}" data-status="keldi">Keldi</button>
+        <button type="button" class="btn small att-absent ${s.status === 'kelmadi' ? '' : 'ghost'}" data-status="kelmadi" style="${s.status === 'kelmadi' ? 'background:var(--red);' : ''}">Kelmadi</button>
+      </div>
+    </div>`).join("");
+
+  wrap.querySelectorAll(".test-row").forEach(row => {
+    const sid = row.dataset.student;
+    row.querySelectorAll("button[data-status]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const s = attendanceStudents.find(x => x.id === sid);
+        s.status = btn.dataset.status;
+        renderAttendanceRows();
+      });
+    });
+  });
+}
+
+document.getElementById("saveAttendanceBtn").addEventListener("click", async () => {
+  const date = document.getElementById("aDate").value;
+  const level = document.getElementById("aLevel").value;
+  await Promise.all(attendanceStudents.map(s =>
+    setDoc(doc(db, "students", s.id, "attendance", date), {
+      date, status: s.status, level, createdAt: serverTimestamp()
+    })
+  ));
+  showToast("Davomat saqlandi");
+});
+
+/* ---------------- Payment ---------------- */
+async function loadPaymentRows() {
+  const snap = await getDocs(collection(db, "students"));
+  const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const wrap = document.getElementById("paymentRows");
+
+  if (!students.length) {
+    wrap.innerHTML = `<div class="empty">O'quvchilar yo'q</div>`;
+    return;
+  }
+
+  wrap.innerHTML = students.map(s => `
+    <div class="card" style="margin-bottom:10px;" data-pay-student="${s.id}">
+      <div class="row-between">
+        <div style="font-weight:800;">${escapeHtml(s.name || s.id)}</div>
+        <button class="btn small" style="width:auto;" data-save-pay="${s.id}">Saqlash</button>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;">
+        <div class="field" style="flex:1;min-width:160px;margin-bottom:0;">
+          <label>Holat</label>
+          <select class="pay-status">
+            <option value="" ${!s.paymentStatus ? "selected" : ""}>Kiritilmagan</option>
+            <option value="paid" ${s.paymentStatus === "paid" ? "selected" : ""}>To'langan</option>
+            <option value="unpaid" ${s.paymentStatus === "unpaid" ? "selected" : ""}>To'lanmagan</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1;min-width:160px;margin-bottom:0;">
+          <label>Keyingi to'lov sanasi</label>
+          <input type="date" class="pay-date" value="${s.paymentDueDate || ""}">
+        </div>
+        <div class="field" style="flex:2;min-width:200px;margin-bottom:0;">
+          <label>Izoh (ixtiyoriy)</label>
+          <input type="text" class="pay-note" value="${escapeHtml(s.paymentNote || "")}">
+        </div>
+      </div>
+    </div>`).join("");
+
+  wrap.querySelectorAll("[data-save-pay]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest("[data-pay-student]");
+      const sid = card.dataset.payStudent;
+      const paymentStatus = card.querySelector(".pay-status").value;
+      const paymentDueDate = card.querySelector(".pay-date").value;
+      const paymentNote = card.querySelector(".pay-note").value.trim();
+      await updateDoc(doc(db, "students", sid), { paymentStatus, paymentDueDate, paymentNote });
+      showToast("To'lov ma'lumoti saqlandi");
+    });
+  });
+}
