@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MockBaza | Shaxsiy kabinet</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span> MockBaza</div>
+      <div class="topbar-right">
+        <span id="studentName" style="font-weight:700;font-size:14px;color:var(--muted);"></span>
+        <span class="points-pill">⭐ <span id="pointsVal">0</span> ball</span>
+        <button class="btn ghost small" id="logoutBtn">Chiqish</button>
+      </div>
+    </div>
+
+    <!-- LEVEL PICKER -->
+    <section id="view-levels">
+      <h2 class="section-title">Bo'limni tanlang</h2>
+      <div class="level-grid" id="levelGrid"></div>
+    </section>
+
+    <!-- TEST LIST -->
+    <section id="view-tests" style="display:none;">
+      <div class="row-between">
+        <h2 class="section-title" id="levelTitle">Testlar</h2>
+        <button class="btn ghost small" id="changeLevelBtn">Bo'limni almashtirish</button>
+      </div>
+      <div id="testList"></div>
+    </section>
+
+    <!-- TEST RUNNER -->
+    <section id="view-runner" style="display:none;">
+      <div class="row-between" style="margin-bottom:14px;">
+        <h2 class="section-title" style="margin:0;" id="runnerTitle">Test</h2>
+        <button class="btn ghost small" id="backToListBtn">Orqaga</button>
+      </div>
+      <div class="test-frame-wrap">
+        <iframe class="test-frame" id="testFrame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+        <div class="test-footer">
+          <span style="font-size:13.5px;color:var(--muted);">Barcha savollarga javob berib, tugmani bosing</span>
+          <button class="btn small" id="finishTestBtn">Testni yakunlash</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="view-result" style="display:none;">
+      <div class="card result-hero">
+        <div style="font-size:14px;color:var(--muted);font-weight:700;" id="resultTestTitle"></div>
+        <div class="result-score" id="resultScore">0/0</div>
+        <div class="result-points" id="resultPoints">+0 ball</div>
+        <div style="margin-top:26px;">
+          <button class="btn secondary small" id="resultBackBtn">Testlar ro'yxatiga qaytish</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

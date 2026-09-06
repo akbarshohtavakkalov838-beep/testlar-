@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MockBaza | Kirish</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-mark">M</div>
+      <h1>Xush kelibsiz</h1>
+      <p class="sub">Shaxsiy kabinetingizga kirish uchun login va parolingizni kiriting.</p>
+
+      <div class="error-msg" id="err"></div>
+
+      <form id="loginForm">
+        <div class="field">
+          <label>Login</label>
+          <input type="text" id="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label>Parol</label>
+          <input type="password" id="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn" type="submit" id="submitBtn">Kirish</button>
+      </form>
+
+      <p style="text-align:center;margin-top:20px;font-size:13px;color:var(--muted);">
+        Login va parolni bilmasangiz, o'qituvchingizga murojaat qiling.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loginStudent } from "./js/common.js";
+
+    const form = document.getElementById("loginForm");
+    const err = document.getElementById("err");
+    const btn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      err.classList.remove("show");
+      btn.disabled = true;
+      btn.textContent = "Tekshirilmoqda...";
+
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const res = await loginStudent(username, password);
+
+      if (res.ok) {
+        window.location.href = "dashboard.html";
+      } else {
+        err.textContent = res.error;
+        err.classList.add("show");
+        btn.disabled = false;
+        btn.textContent = "Kirish";
+      }
+    });
+  </script>
+</body>
+</html>

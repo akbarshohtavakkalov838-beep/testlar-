@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MockBaza | Admin panel</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div class="auth-shell" id="loginShell">
+    <div class="auth-card">
+      <div class="auth-mark" style="background:var(--ink);">A</div>
+      <h1 id="loginTitle">Admin panel</h1>
+      <p class="sub" id="loginSub">Davom etish uchun tizimga kiring.</p>
+      <div class="error-msg" id="loginErr"></div>
+      <form id="loginForm">
+        <div class="field"><label>Login</label><input type="text" id="aUser" required></div>
+        <div class="field"><label>Parol</label><input type="password" id="aPass" required></div>
+        <div class="field" id="passConfirmWrap" style="display:none;">
+          <label>Parolni tasdiqlang</label><input type="password" id="aPass2">
+        </div>
+        <button class="btn" type="submit" id="loginBtn">Kirish</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div class="wrap" id="panel" style="display:none;">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span> MockBaza · Admin</div>
+      <button class="btn ghost small" id="logoutBtn">Chiqish</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="students">O'quvchilar</button>
+      <button class="tab" data-tab="levels">Bo'limlar</button>
+      <button class="tab" data-tab="tests">Testlar</button>
+      <button class="tab" data-tab="scoring">Ball qoidasi</button>
+    </div>
+
+    <!-- STUDENTS -->
+    <section id="tab-students">
+      <div class="card" style="margin-bottom:20px;">
+        <h2 class="section-title" style="margin-top:0;">Yangi o'quvchi qo'shish</h2>
+        <form id="studentForm">
+          <div class="field"><label>Login (username)</label><input type="text" id="sUsername" required></div>
+          <div class="field"><label>Ism</label><input type="text" id="sName" required></div>
+          <div class="field"><label>Parol</label><input type="text" id="sPassword" required></div>
+          <button class="btn small" type="submit">Qo'shish</button>
+        </form>
+      </div>
+      <h2 class="section-title">O'quvchilar ro'yxati</h2>
+      <div class="card"><table id="studentsTable"><thead><tr>
+        <th>Login</th><th>Ism</th><th>Bo'lim</th><th>Ball</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- LEVELS -->
+    <section id="tab-levels" style="display:none;">
+      <div class="card" style="margin-bottom:20px;">
+        <h2 class="section-title" style="margin-top:0;">Yangi bo'lim qo'shish</h2>
+        <form id="levelForm">
+          <div class="field"><label>Kod (slug, masalan: beginner)</label><input type="text" id="lSlug" required placeholder="beginner"></div>
+          <div class="field"><label>Nomi (ko'rinadigan)</label><input type="text" id="lName" required placeholder="Beginner"></div>
+          <div class="field"><label>Tartib raqami</label><input type="number" id="lOrder" value="1"></div>
+          <button class="btn small" type="submit">Qo'shish</button>
+        </form>
+      </div>
+      <h2 class="section-title">Bo'limlar</h2>
+      <div class="card"><table id="levelsTable"><thead><tr>
+        <th>Kod</th><th>Nomi</th><th>Tartib</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- TESTS -->
+    <section id="tab-tests" style="display:none;">
+      <div class="card" style="margin-bottom:20px;">
+        <h2 class="section-title" style="margin-top:0;">Yangi test qo'shish</h2>
+        <form id="testForm">
+          <div class="field"><label>Test nomi</label><input type="text" id="tTitle" required></div>
+          <div class="field"><label>Bo'lim</label><select id="tLevel" required></select></div>
+          <div class="field"><label>Savollar soni</label><input type="number" id="tTotal" min="1" required></div>
+          <div class="field">
+            <label>To'g'ri javoblar kaliti (vergul bilan, tartib bo'yicha — masalan: A,C,B,D,A)</label>
+            <input type="text" id="tKey" required placeholder="A,C,B,D,A,...">
+          </div>
+          <div class="field">
+            <label>Test HTML kodi (radio inputlar name="q1", name="q2"... bo'lishi shart)</label>
+            <textarea id="tHtml" required placeholder="<div>...&lt;input type=radio name=q1 value=A&gt;...</div>"></textarea>
+          </div>
+          <button class="btn small" type="submit">Qo'shish</button>
+        </form>
+      </div>
+      <h2 class="section-title">Testlar ro'yxati</h2>
+      <div class="card"><table id="testsTable"><thead><tr>
+        <th>Nomi</th><th>Bo'lim</th><th>Savollar</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- SCORING -->
+    <section id="tab-scoring" style="display:none;">
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0;">Ball qoidasi</h2>
+        <p style="color:var(--muted);font-size:13.5px;margin-top:-8px;">
+          Foiz bo'yicha: masalan 30 savoldan 28-29 to'g'ri (93%+) = 10 ball. Har bir qatorni % va ball sifatida kiriting.
+        </p>
+        <div id="thresholdRows"></div>
+        <button class="btn ghost small" id="addThresholdBtn" type="button" style="width:auto;margin-top:10px;">+ Qator qo'shish</button>
+        <div style="margin-top:18px;"><button class="btn small" id="saveScoringBtn">Saqlash</button></div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
