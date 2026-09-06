@@ -12,37 +12,34 @@
 <body>
   <div class="auth-shell">
     <div class="auth-card" style="text-align:center;">
-      <img src="icons/icon-192.png" alt="MockBaza" style="width:72px;height:72px;border-radius:18px;margin:0 auto 18px;display:block;">
+      <img src="icons/icon-192.png" alt="MockBaza" style="width:80px;height:80px;border-radius:20px;margin:0 auto 20px;display:block;box-shadow:var(--shadow);">
       <h1>MockBaza</h1>
-      <p class="sub">Ilovani telefoningizga o'rnatib oling.</p>
+      <p class="sub" id="statusText">Ilovani telefoningizga o'rnatib oling.</p>
 
       <button class="btn" id="installBtn" style="display:none;">📲 Ilovani yuklab olish</button>
 
-      <div id="alreadyInstalled" style="display:none;">
-        <p style="color:var(--green);font-weight:800;margin-bottom:16px;">✓ Ilova allaqachon o'rnatilgan</p>
+      <div id="doneBox" style="display:none;">
+        <div style="font-size:40px;margin-bottom:6px;">✅</div>
+        <p style="color:var(--green);font-weight:800;">Ilova o'rnatildi!</p>
       </div>
 
-      <div id="unsupportedNote" style="display:none;color:var(--muted);font-size:13.5px;margin-top:10px;">
-        Brauzeringiz avtomatik o'rnatishni qo'llab-quvvatlamaydi. Chrome (Android) yoki Safari (iPhone) orqali oching.
+      <div id="waitBox" style="display:none;color:var(--muted);font-size:13.5px;">
+        <div class="spinner" style="width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--purple);border-radius:50%;margin:0 auto 10px;animation:spin 0.8s linear infinite;"></div>
+        Tayyorlanmoqda... bir necha soniya kuting.
       </div>
 
-      <a href="index.html" class="btn ghost small" style="margin-top:18px;">Kirish sahifasiga o'tish</a>
+      <div id="manualBox" style="display:none;color:var(--muted);font-size:13.5px;line-height:1.6;text-align:left;background:var(--purple-light);padding:14px 16px;border-radius:12px;">
+        Brauzeringiz avtomatik o'rnatishni ko'rsatmadi. Buni sinab ko'ring:<br>
+        ⋮ menyu (yuqori o'ng burchakda) → <strong>"O'rnatish"</strong> yoki <strong>"Add to Home screen"</strong>.
+      </div>
+
+      <a href="index.html" class="btn ghost small" style="margin-top:20px;">Kirish sahifasiga o'tish</a>
     </div>
   </div>
 
-  <!-- iOS uchun qo'lda o'rnatish yo'riqnomasi -->
-  <div id="iosModal" style="display:none;position:fixed;inset:0;background:rgba(36,30,61,.55);align-items:center;justify-content:center;padding:20px;z-index:1000;">
-    <div class="auth-card" style="max-width:340px;text-align:left;">
-      <h1 style="font-size:18px;">iPhone/iPad uchun</h1>
-      <p class="sub" style="margin-bottom:18px;">Safari brauzerida quyidagilarni bajaring:</p>
-      <ol style="padding-left:18px;font-size:14px;line-height:1.9;color:var(--ink);">
-        <li>Pastdagi <strong>ulashish (Share) ⬆️</strong> tugmasini bosing</li>
-        <li><strong>"Add to Home Screen"</strong> ni tanlang</li>
-        <li><strong>"Add"</strong> tugmasini bosing</li>
-      </ol>
-      <button class="btn ghost small" id="closeIosModal" style="margin-top:10px;">Yopish</button>
-    </div>
-  </div>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 
   <script>
     if ("serviceWorker" in navigator) {
@@ -50,47 +47,64 @@
     }
 
     const installBtn = document.getElementById("installBtn");
+    const statusText = document.getElementById("statusText");
+    const doneBox = document.getElementById("doneBox");
+    const waitBox = document.getElementById("waitBox");
+    const manualBox = document.getElementById("manualBox");
+
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches
       || window.navigator.standalone === true;
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
     let deferredPrompt = null;
 
-    if (isStandalone) {
-      document.getElementById("alreadyInstalled").style.display = "";
-    } else {
-      installBtn.style.display = "";
+    function showInstalled() {
+      installBtn.style.display = "none";
+      waitBox.style.display = "none";
+      manualBox.style.display = "none";
+      statusText.style.display = "none";
+      doneBox.style.display = "";
     }
 
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-    });
+    if (isStandalone) {
+      showInstalled();
+    } else if (isIOS) {
+      // iOS never fires beforeinstallprompt — go straight to manual instructions
+      statusText.textContent = "iPhone/iPad uchun qo'lda o'rnatish kerak:";
+      manualBox.innerHTML = `
+        1. Pastdagi ulashish (Share) tugmasini bosing<br>
+        2. <strong>"Add to Home Screen"</strong> ni tanlang<br>
+        3. <strong>"Add"</strong> ni bosing`;
+      manualBox.style.display = "";
+    } else {
+      // Android/desktop Chrome: wait briefly for the browser's install signal
+      waitBox.style.display = "";
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        waitBox.style.display = "none";
+        installBtn.style.display = "";
+      });
+
+      setTimeout(() => {
+        if (!deferredPrompt && !isStandalone) {
+          waitBox.style.display = "none";
+          manualBox.style.display = "";
+        }
+      }, 2500);
+    }
 
     installBtn.addEventListener("click", async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        if (choice.outcome === "accepted") {
-          installBtn.style.display = "none";
-          document.getElementById("alreadyInstalled").style.display = "";
-        }
-      } else if (isIOS) {
-        document.getElementById("iosModal").style.display = "flex";
-      } else {
-        document.getElementById("unsupportedNote").style.display = "";
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (choice.outcome === "accepted") {
+        showInstalled();
       }
     });
 
-    document.getElementById("closeIosModal").addEventListener("click", () => {
-      document.getElementById("iosModal").style.display = "none";
-    });
-
-    window.addEventListener("appinstalled", () => {
-      installBtn.style.display = "none";
-      document.getElementById("alreadyInstalled").style.display = "";
-    });
+    window.addEventListener("appinstalled", showInstalled);
   </script>
 </body>
 </html>
