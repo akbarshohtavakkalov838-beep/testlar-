@@ -20,45 +20,109 @@
       </div>
     </div>
 
-    <!-- LEVEL PICKER -->
-    <section id="view-levels">
-      <h2 class="section-title">Bo'limni tanlang</h2>
-      <div class="level-grid" id="levelGrid"></div>
+    <div class="tabs">
+      <button class="tab active" data-maintab="overview">Umumiy</button>
+      <button class="tab" data-maintab="tests">Testlar</button>
+      <button class="tab" data-maintab="homework">Uy vazifasi</button>
+      <button class="tab" data-maintab="attendance">Davomat</button>
+      <button class="tab" data-maintab="payment">To'lov</button>
+    </div>
+
+    <!-- ============ OVERVIEW ============ -->
+    <section id="maintab-overview">
+      <div class="level-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:24px;">
+        <div class="card">
+          <div style="color:var(--muted);font-size:13px;font-weight:700;">Jami ball</div>
+          <div style="font-size:30px;font-weight:900;color:var(--purple);margin-top:4px;" id="ovPoints">0</div>
+        </div>
+        <div class="card">
+          <div style="color:var(--muted);font-size:13px;font-weight:700;">Davomat (so'nggi 30 kun)</div>
+          <div style="font-size:30px;font-weight:900;color:var(--green);margin-top:4px;" id="ovAttendance">—</div>
+        </div>
+        <div class="card">
+          <div style="color:var(--muted);font-size:13px;font-weight:700;">To'lov holati</div>
+          <div style="font-size:20px;font-weight:900;margin-top:8px;" id="ovPayment">—</div>
+        </div>
+      </div>
+
+      <h2 class="section-title">So'nggi uy vazifalari</h2>
+      <div id="ovHomework"></div>
     </section>
 
-    <!-- TEST LIST -->
-    <section id="view-tests" style="display:none;">
-      <div class="row-between">
-        <h2 class="section-title" id="levelTitle">Testlar</h2>
-        <button class="btn ghost small" id="changeLevelBtn">Bo'limni almashtirish</button>
+    <!-- ============ TESTS ============ -->
+    <section id="maintab-tests" style="display:none;">
+      <!-- LEVEL PICKER -->
+      <div id="view-levels">
+        <h2 class="section-title">Bo'limni tanlang</h2>
+        <div class="level-grid" id="levelGrid"></div>
       </div>
-      <div id="testList"></div>
-    </section>
 
-    <!-- TEST RUNNER -->
-    <section id="view-runner" style="display:none;">
-      <div class="row-between" style="margin-bottom:14px;">
-        <h2 class="section-title" style="margin:0;" id="runnerTitle">Test</h2>
-        <button class="btn ghost small" id="backToListBtn">Orqaga</button>
+      <!-- TEST LIST -->
+      <div id="view-tests" style="display:none;">
+        <div class="row-between">
+          <h2 class="section-title" id="levelTitle">Testlar</h2>
+          <button class="btn ghost small" id="changeLevelBtn">Bo'limni almashtirish</button>
+        </div>
+        <div id="testList"></div>
       </div>
-      <div class="test-frame-wrap">
-        <iframe class="test-frame" id="testFrame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-        <div class="test-footer">
-          <span style="font-size:13.5px;color:var(--muted);">Barcha savollarga javob berib, tugmani bosing</span>
-          <button class="btn small" id="finishTestBtn">Testni yakunlash</button>
+
+      <!-- TEST RUNNER -->
+      <div id="view-runner" style="display:none;">
+        <div class="row-between" style="margin-bottom:14px;">
+          <h2 class="section-title" style="margin:0;" id="runnerTitle">Test</h2>
+          <button class="btn ghost small" id="backToListBtn">Orqaga</button>
+        </div>
+        <div class="test-frame-wrap">
+          <iframe class="test-frame" id="testFrame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+          <div class="test-footer">
+            <span style="font-size:13.5px;color:var(--muted);">Barcha savollarga javob berib, tugmani bosing</span>
+            <button class="btn small" id="finishTestBtn">Testni yakunlash</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div id="view-result" style="display:none;">
+        <div class="card result-hero">
+          <div style="font-size:14px;color:var(--muted);font-weight:700;" id="resultTestTitle"></div>
+          <div class="result-score" id="resultScore">0/0</div>
+          <div class="result-points" id="resultPoints">+0 ball</div>
+          <div style="margin-top:26px;">
+            <button class="btn secondary small" id="resultBackBtn">Testlar ro'yxatiga qaytish</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- RESULT -->
-    <section id="view-result" style="display:none;">
-      <div class="card result-hero">
-        <div style="font-size:14px;color:var(--muted);font-weight:700;" id="resultTestTitle"></div>
-        <div class="result-score" id="resultScore">0/0</div>
-        <div class="result-points" id="resultPoints">+0 ball</div>
-        <div style="margin-top:26px;">
-          <button class="btn secondary small" id="resultBackBtn">Testlar ro'yxatiga qaytish</button>
+    <!-- ============ HOMEWORK ============ -->
+    <section id="maintab-homework" style="display:none;">
+      <h2 class="section-title">Uy vazifalari</h2>
+      <div id="homeworkList"></div>
+    </section>
+
+    <!-- ============ ATTENDANCE ============ -->
+    <section id="maintab-attendance" style="display:none;">
+      <h2 class="section-title">Davomat tarixi</h2>
+      <div class="card"><table id="attendanceTable"><thead><tr>
+        <th>Sana</th><th>Holat</th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- ============ PAYMENT ============ -->
+    <section id="maintab-payment" style="display:none;">
+      <h2 class="section-title">To'lov holati</h2>
+      <div class="card">
+        <div class="row-between">
+          <div>
+            <div style="color:var(--muted);font-size:13px;font-weight:700;">Holat</div>
+            <div style="font-size:20px;font-weight:900;margin-top:4px;" id="payStatus">—</div>
+          </div>
+          <div>
+            <div style="color:var(--muted);font-size:13px;font-weight:700;">Keyingi to'lov sanasi</div>
+            <div style="font-size:20px;font-weight:900;margin-top:4px;" id="payDate">—</div>
+          </div>
         </div>
+        <div id="payNoteWrap" style="margin-top:14px;font-size:13.5px;color:var(--muted);"></div>
       </div>
     </section>
   </div>
@@ -71,4 +135,3 @@
   </script>
 </body>
 </html>
-
