@@ -1,5 +1,5 @@
 import {
-  db, doc, getDoc, updateDoc, collection, getDocs, query, where,
+  db, doc, getDoc, updateDoc, collection, getDocs, query, where, orderBy,
   increment, serverTimestamp, setDoc
 } from "./common.js";
 import {
@@ -33,6 +33,22 @@ document.getElementById("changeLevelBtn").addEventListener("click", () => showVi
 document.getElementById("backToListBtn").addEventListener("click", () => showView("tests"));
 document.getElementById("resultBackBtn").addEventListener("click", () => renderTestList(currentLevel));
 
+/* ============ MAIN TABS ============ */
+const mainSections = ["overview", "tests", "homework", "attendance", "payment"];
+document.querySelectorAll("[data-maintab]").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll("[data-maintab]").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const target = tab.dataset.maintab;
+    mainSections.forEach(name => {
+      document.getElementById("maintab-" + name).style.display = (name === target) ? "" : "none";
+    });
+    if (target === "homework") renderHomeworkTab();
+    if (target === "attendance") renderAttendanceTab();
+    if (target === "payment") renderPaymentTab();
+  });
+});
+
 async function init() {
   thresholds = await getScoringThresholds();
 
@@ -55,8 +71,114 @@ async function init() {
   } else {
     showView("levels");
   }
+
+  renderOverview();
 }
 
+/* ============ OVERVIEW TAB ============ */
+async function renderOverview() {
+  document.getElementById("ovPoints").textContent = studentData.totalPoints || 0;
+
+  // Attendance % over the last 30 days
+  const attSnap = await getDocs(collection(db, "students", studentId, "attendance"));
+  const records = attSnap.docs.map(d => d.data());
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const recent = records.filter(r => r.date && new Date(r.date) >= cutoff);
+  if (recent.length) {
+    const came = recent.filter(r => r.status === "keldi").length;
+    document.getElementById("ovAttendance").textContent = Math.round((came / recent.length) * 100) + "%";
+  } else {
+    document.getElementById("ovAttendance").textContent = "—";
+  }
+
+  const payEl = document.getElementById("ovPayment");
+  if (studentData.paymentStatus === "paid") {
+    payEl.textContent = "To'langan ✓";
+    payEl.style.color = "var(--green)";
+  } else if (studentData.paymentStatus === "unpaid") {
+    payEl.textContent = "To'lanmagan";
+    payEl.style.color = "var(--red)";
+  } else {
+    payEl.textContent = "—";
+    payEl.style.color = "var(--ink)";
+  }
+
+  // Latest 3 homework for the student's level
+  const hwEl = document.getElementById("ovHomework");
+  if (!studentData.level) {
+    hwEl.innerHTML = `<div class="empty">Avval "Testlar" bo'limidan darajangizni tanlang.</div>`;
+    return;
+  }
+  const hwSnap = await getDocs(query(collection(db, "homework"), where("level", "==", studentData.level)));
+  const hw = hwSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+    .slice(0, 3);
+  hwEl.innerHTML = hw.length
+    ? hw.map(renderHomeworkCard).join("")
+    : `<div class="empty">Hozircha uy vazifasi yo'q.</div>`;
+}
+
+function renderHomeworkCard(h) {
+  return `
+    <div class="test-row" style="align-items:flex-start;">
+      <div>
+        <div style="font-weight:700;">${escapeHtml(h.title)}</div>
+        ${h.description ? `<div class="meta" style="margin-top:4px;white-space:pre-wrap;">${escapeHtml(h.description)}</div>` : ""}
+        ${h.dueDate ? `<div class="meta" style="margin-top:4px;">Muddat: ${escapeHtml(h.dueDate)}</div>` : ""}
+      </div>
+    </div>`;
+}
+
+/* ============ HOMEWORK TAB ============ */
+async function renderHomeworkTab() {
+  const el = document.getElementById("homeworkList");
+  if (!studentData.level) {
+    el.innerHTML = `<div class="empty">Avval "Testlar" bo'limidan darajangizni tanlang.</div>`;
+    return;
+  }
+  const hwSnap = await getDocs(query(collection(db, "homework"), where("level", "==", studentData.level)));
+  const hw = hwSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  el.innerHTML = hw.length
+    ? hw.map(renderHomeworkCard).join("")
+    : `<div class="empty">Hozircha uy vazifasi yo'q.</div>`;
+}
+
+/* ============ ATTENDANCE TAB ============ */
+async function renderAttendanceTab() {
+  const attSnap = await getDocs(collection(db, "students", studentId, "attendance"));
+  const records = attSnap.docs.map(d => d.data()).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const tbody = document.querySelector("#attendanceTable tbody");
+  tbody.innerHTML = records.length
+    ? records.map(r => `
+        <tr>
+          <td>${escapeHtml(r.date || "")}</td>
+          <td><span class="badge ${r.status === 'keldi' ? 'done' : ''}" style="${r.status !== 'keldi' ? 'background:#FDECEC;color:var(--red);' : ''}">
+            ${r.status === "keldi" ? "Keldi" : "Kelmadi"}
+          </span></td>
+        </tr>`).join("")
+    : `<tr><td colspan="2" class="empty">Hali davomat belgilanmagan</td></tr>`;
+}
+
+/* ============ PAYMENT TAB ============ */
+function renderPaymentTab() {
+  const statusEl = document.getElementById("payStatus");
+  if (studentData.paymentStatus === "paid") {
+    statusEl.textContent = "To'langan ✓";
+    statusEl.style.color = "var(--green)";
+  } else if (studentData.paymentStatus === "unpaid") {
+    statusEl.textContent = "To'lanmagan";
+    statusEl.style.color = "var(--red)";
+  } else {
+    statusEl.textContent = "Kiritilmagan";
+    statusEl.style.color = "var(--muted)";
+  }
+  document.getElementById("payDate").textContent = studentData.paymentDueDate || "—";
+  document.getElementById("payNoteWrap").textContent = studentData.paymentNote || "";
+}
+
+/* ============ TESTS: level grid ============ */
 function renderLevelGrid() {
   const grid = document.getElementById("levelGrid");
   if (!levelsCache.length) {
