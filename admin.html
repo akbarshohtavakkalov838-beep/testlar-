@@ -40,6 +40,9 @@
       <button class="tab active" data-tab="students">O'quvchilar</button>
       <button class="tab" data-tab="levels">Bo'limlar</button>
       <button class="tab" data-tab="tests">Testlar</button>
+      <button class="tab" data-tab="homework">Uy vazifasi</button>
+      <button class="tab" data-tab="attendance">Davomat</button>
+      <button class="tab" data-tab="payment">To'lov</button>
       <button class="tab" data-tab="scoring">Ball qoidasi</button>
     </div>
 
@@ -100,6 +103,45 @@
       <div class="card"><table id="testsTable"><thead><tr>
         <th>Nomi</th><th>Bo'lim</th><th>Savollar</th><th></th>
       </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- HOMEWORK -->
+    <section id="tab-homework" style="display:none;">
+      <div class="card" style="margin-bottom:20px;">
+        <h2 class="section-title" style="margin-top:0;">Yangi uy vazifasi qo'shish</h2>
+        <form id="homeworkForm">
+          <div class="field"><label>Sarlavha</label><input type="text" id="hTitle" required></div>
+          <div class="field"><label>Bo'lim (guruh)</label><select id="hLevel" required></select></div>
+          <div class="field"><label>Tavsif</label><textarea id="hDesc" style="min-height:90px;" placeholder="Vazifa matni..."></textarea></div>
+          <div class="field"><label>Muddat (ixtiyoriy)</label><input type="date" id="hDue"></div>
+          <button class="btn small" type="submit">Qo'shish</button>
+        </form>
+      </div>
+      <h2 class="section-title">Berilgan vazifalar</h2>
+      <div class="card"><table id="homeworkTable"><thead><tr>
+        <th>Sarlavha</th><th>Bo'lim</th><th>Muddat</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- ATTENDANCE -->
+    <section id="tab-attendance" style="display:none;">
+      <div class="card" style="margin-bottom:20px;">
+        <h2 class="section-title" style="margin-top:0;">Davomat belgilash</h2>
+        <div class="field"><label>Sana</label><input type="date" id="aDate"></div>
+        <div class="field"><label>Bo'lim</label><select id="aLevel"></select></div>
+        <button class="btn ghost small" type="button" id="loadAttendanceBtn" style="width:auto;">Ro'yxatni yuklash</button>
+        <div id="attendanceRows" style="margin-top:16px;"></div>
+        <div id="attendanceSaveWrap" style="margin-top:14px;display:none;">
+          <button class="btn small" id="saveAttendanceBtn" style="width:auto;">Davomatni saqlash</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYMENT -->
+    <section id="tab-payment" style="display:none;">
+      <h2 class="section-title">O'quvchilar to'lovi</h2>
+      <p style="color:var(--muted);font-size:13.5px;margin-top:-10px;">Har bir qatorda holat va keyingi to'lov sanasini kiritib, "Saqlash" tugmasini bosing.</p>
+      <div id="paymentRows"></div>
     </section>
 
     <!-- SCORING -->
