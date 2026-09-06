@@ -77,7 +77,6 @@ async function init() {
 
 /* ============ OVERVIEW TAB ============ */
 async function renderOverview() {
-  document.getElementById("ovName").textContent = studentData.name || studentId;
   document.getElementById("ovPoints").textContent = studentData.totalPoints || 0;
 
   // Attendance % over the last 30 days
