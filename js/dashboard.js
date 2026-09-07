@@ -55,7 +55,6 @@ async function init() {
   const snap = await getDoc(doc(db, "students", studentId));
   if (!snap.exists()) { logoutStudent(); return; }
   studentData = snap.data();
-  document.getElementById("studentName").textContent = studentData.name || studentId;
   document.getElementById("pointsVal").textContent = studentData.totalPoints || 0;
 
   const levelsSnap = await getDocs(collection(db, "levels"));
@@ -77,6 +76,7 @@ async function init() {
 
 /* ============ OVERVIEW TAB ============ */
 async function renderOverview() {
+  document.getElementById("ovName").textContent = studentData.name || studentId;
   document.getElementById("ovPoints").textContent = studentData.totalPoints || 0;
 
   // Attendance % over the last 30 days
@@ -149,16 +149,16 @@ async function renderHomeworkTab() {
 async function renderAttendanceTab() {
   const attSnap = await getDocs(collection(db, "students", studentId, "attendance"));
   const records = attSnap.docs.map(d => d.data()).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  const tbody = document.querySelector("#attendanceTable tbody");
-  tbody.innerHTML = records.length
+  const el = document.getElementById("attendanceList");
+  el.innerHTML = records.length
     ? records.map(r => `
-        <tr>
-          <td>${escapeHtml(r.date || "")}</td>
-          <td><span class="badge ${r.status === 'keldi' ? 'done' : ''}" style="${r.status !== 'keldi' ? 'background:#FDECEC;color:var(--red);' : ''}">
+        <div class="test-row">
+          <div style="font-weight:700;">${escapeHtml(r.date || "")}</div>
+          <span class="badge ${r.status === 'keldi' ? 'done' : 'absent'}">
             ${r.status === "keldi" ? "Keldi" : "Kelmadi"}
-          </span></td>
-        </tr>`).join("")
-    : `<tr><td colspan="2" class="empty">Hali davomat belgilanmagan</td></tr>`;
+          </span>
+        </div>`).join("")
+    : `<div class="empty">Hali davomat belgilanmagan</div>`;
 }
 
 /* ============ PAYMENT TAB ============ */
